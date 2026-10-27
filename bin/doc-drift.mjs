@@ -165,6 +165,7 @@ const cmds = {
     const file = DR.saveReport(root, md, { findings: result.findings })
     const main = result.findings.filter((f) => f.severity !== 'info')
     console.log(`\n体检完成：需要处理 ${main.length} 项（其中 AI 配置文件 ${main.filter((f) => f.aiConfig).length} 项），提示 ${result.findings.length - main.length} 项`)
+    if (result.stats.staleLeft) console.log(`内容过时：已判断 ${result.stats.judgedTotal}/${result.stats.candidates} 段，还剩 ${result.stats.staleLeft} 段——处理完这批再跑一次 doctor 接着判`)
     if (result.stats.codeTodoClosed || result.stats.codeTodoOpen) console.log(`对齐：代码待改清单本次已对齐 ${result.stats.codeTodoClosed} 条（已打勾），仍待开发 ${result.stats.codeTodoOpen} 条（.doc-drift/code-todo.md）`)
     console.log(`报告：${file}`)
   },

@@ -165,6 +165,21 @@ try {
     assert.equal(r2.fresh, 0); assert.equal(calls, before + 1)              // 没有新改动：不再问
   })
 
+  await t('doctor 分批：每次只判下一批，判过的记住；全判完后再跑不再调用模型', async () => {
+    const later = new Date(Date.now() + 10000).toISOString()          // 文档之后又提交了代码改动 → 内容过时候选
+    w('src/main/java/demo/OrderController.java', readFileSync(join(root, 'src/main/java/demo/OrderController.java'), 'utf8') + '// v2\n')
+    execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qam', 'price x20'], { cwd: root, stdio: 'ignore', env: { ...process.env, GIT_COMMITTER_DATE: later, GIT_AUTHOR_DATE: later } })
+    const one = await DR.runDoctor(root, { useModel: true, scope: 'all', maxStale: 1 })
+    assert.ok(one.stats.candidates >= 1); assert.equal(one.stats.judged, 1)
+    assert.equal(one.stats.staleLeft, one.stats.candidates - one.stats.judgedTotal)
+    const all = await DR.runDoctor(root, { useModel: true, scope: 'all', maxStale: 100 })
+    assert.equal(all.stats.judged, one.stats.candidates - 1); assert.equal(all.stats.staleLeft, 0)   // 接着判剩下的，不重判
+    const before = calls
+    const again = await DR.runDoctor(root, { useModel: true, scope: 'all' })
+    assert.equal(again.stats.judged, 0); assert.equal(calls, before)
+    assert.equal(again.findings.filter((x) => x.kind === 'stale').length, all.findings.filter((x) => x.kind === 'stale').length)   // 缓存的判断照样出报告
+  })
+
   await t('钩子：新增 Controller → "没有文档"待办；一起改了文档的不判断', async () => {
     w('src/main/java/demo/PayController.java', `package demo;\n@RestController\npublic class PayController {\n  @GetMapping("/pay")\n  public String pay() { return "ok"; }\n}\n`)
     await H.scanChanges(root)
