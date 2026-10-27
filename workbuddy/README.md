@@ -29,7 +29,7 @@
 
 - 项目是 git 仓库（用 git 历史判断"以前有过、现在没了"）。
 - Node ≥ 18.17（没有的话自动用 WorkBuddy 自带的 Node）。
-- 可选：StartLux 密钥（`DOC_DRIFT_API_KEY` 或 `BAMBOO_API_KEY`）。配置后文档分类和"是否过时"由 StartLux 判断，更快更省；不配置时由专家自己判断。
+- 可选：StartLux 密钥。到 [bamboonode.dev](https://bamboonode.dev/) **免费注册**即可领取，设置成环境变量 `DOC_DRIFT_API_KEY`（或写进 `~/.doc-drift/.env`：`DOC_DRIFT_API_KEY=你的密钥`）。配置后文档分类和"是否过时"由 StartLux 判断，更快更省；不配置时由专家自己判断，功能一样能用。
 
 ## 隐私
 

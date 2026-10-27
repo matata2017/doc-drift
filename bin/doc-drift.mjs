@@ -70,7 +70,7 @@ const cmds = {
     const root = rootOrDie({ allowNew: true })
     const existing = P.loadConfig(root)
     const useModel = !has('--no-model') && !!D.apiKey()
-    if (!has('--no-model') && !useModel) console.log('没有 StartLux 密钥（DOC_DRIFT_API_KEY / BAMBOO_API_KEY），跳过自动分类；文档状态需要手动 mark。')
+    if (!has('--no-model') && !useModel) console.log(D.KEY_HELP + '\n本次跳过自动分类，文档状态需要按目录判断后 mark。')
     const { config, map, questions, stats } = await I.runInit(root, { useModel, existing, log: (s) => process.stderr.write(s + '\r') })
     P.saveConfig(root, config); P.saveMap(root, map); P.ensureGitignore(root)
     const state = P.loadState(root); state.questions = questions; P.saveState(root, state)
@@ -86,6 +86,7 @@ const cmds = {
   async doctor() {
     const root = rootOrDie()
     const useModel = !has('--no-model') && !!D.apiKey()
+    if (!has('--no-model') && !useModel) console.log(D.KEY_HELP + '\n本次只做规则检查；"内容可能过时"一类只列候选，需要人或 agent 判断。')
     const result = await DR.runDoctor(root, { useModel, maxStale: Number(flag('--max', 40)), log: (s) => process.stderr.write(s + '\r') })
     if (has('--json')) { console.log(JSON.stringify(result.findings, null, 1)); return }
     const md = DR.renderReport(root, result)
@@ -199,7 +200,7 @@ const cmds = {
     const [maj, min] = process.versions.node.split('.').map(Number)
     console.log(`node ${process.versions.node} ${maj > 18 || (maj === 18 && min >= 17) ? 'OK' : '需要 ≥ 18.17'}`)
     console.log(`git ${G.isRepo(process.cwd()) ? '当前目录是 git 仓库' : '当前目录不是 git 仓库（历史检查会跳过）'}`)
-    console.log(`StartLux 密钥 ${D.apiKey() ? '已配置' : '未配置（DOC_DRIFT_API_KEY 或 BAMBOO_API_KEY）'}`)
+    console.log(`StartLux 密钥 ${D.apiKey() ? '已配置' : '未配置\n  ' + D.KEY_HELP}`)
     if (D.apiKey()) {
       try { await D.ask('ping', { ok: { type: 'choice', instructions: 'Is this a test?', criteria: ['yes', 'no'] } }, { timeoutMs: 15000 }); console.log('接口 OK') }
       catch (e) { console.log('接口失败：' + e.message) }

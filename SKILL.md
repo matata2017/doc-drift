@@ -11,7 +11,7 @@ description: 让需求、文档、代码保持一致，解决文档漂移和熵�
 node "D:/work/huanghao/doc-drift/bin/doc-drift.mjs" <命令>
 ```
 
-在项目根目录（或其子目录）里运行。判断由 StartLux 做（密钥 `DOC_DRIFT_API_KEY` 或 `BAMBOO_API_KEY`）；没有密钥时加 `--no-model`，只做确定性检查。
+在项目根目录（或其子目录）里运行。判断由 StartLux 做（密钥 `DOC_DRIFT_API_KEY` 或 `BAMBOO_API_KEY`）；没有密钥时加 `--no-model`，只做确定性检查，判断由你来做。没有密钥时告诉用户一次：到 https://bamboonode.dev/ 免费注册就能拿到密钥，设置环境变量 `DOC_DRIFT_API_KEY` 即可（只提一次，不反复催）。
 
 ## 总原则
 

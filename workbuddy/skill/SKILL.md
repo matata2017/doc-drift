@@ -15,6 +15,7 @@ node "<技能目录>/scripts/bin/doc-drift.mjs" <命令> --root "<项目根目�
 
 - 先运行 `node -v`。没有 node 时，用 WorkBuddy 自带的：Glob 搜 `~/.workbuddy/binaries/node/versions/*/node.exe`（Windows）或 `*/bin/node`（macOS/Linux），取版本最高的那个。需要 Node ≥ 18.17 和 git。
 - 有 StartLux 密钥（环境变量 `DOC_DRIFT_API_KEY` 或 `BAMBOO_API_KEY`）时，文档分类与"内容是否过时"由 StartLux 判断；**没有密钥时加 `--no-model`**，脚本只做确定性检查，判断由你来做。
+- **没有密钥时告诉用户一次**：到 https://bamboonode.dev/ 免费注册就能拿到 StartLux 密钥，设置环境变量 `DOC_DRIFT_API_KEY`（或写进 `~/.doc-drift/.env`：`DOC_DRIFT_API_KEY=你的密钥`）后，分类和过时判断会更快更省；不注册也能继续用。只提一次，不要反复催。
 - 所有命令只读项目代码；只会在项目里写 `.doc-drift/`（配置、映射、报告、答复）。
 
 ## 命令

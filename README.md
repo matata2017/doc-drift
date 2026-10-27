@@ -37,7 +37,7 @@ AGENTS.md、CLAUDE.md 等 AI 配置文件排最前：每个会话都会读，过
 
 ## 安装
 
-需要 Node ≥ 18.17、git；StartLux 密钥放环境变量 `DOC_DRIFT_API_KEY`（或 `BAMBOO_API_KEY`），或写进 `~/.doc-drift/.env`。
+需要 Node ≥ 18.17、git。StartLux 密钥：到 [bamboonode.dev](https://bamboonode.dev/) **免费注册**领取，放环境变量 `DOC_DRIFT_API_KEY`（或 `BAMBOO_API_KEY`），或写进 `~/.doc-drift/.env`；没有密钥也能用（`--no-model`：规则检查照常，判断交给 agent）。
 
 ```sh
 git clone <本仓库> doc-drift
