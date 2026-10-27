@@ -1,0 +1,44 @@
+{
+  "name": "doc-drift-expert",
+  "version": "1.0.0",
+  "description": "Audits whether requirements, docs and code are consistent: outdated code references, broken links, stale sections and undocumented APIs, then fixes the docs after confirmation",
+  "author": {
+    "name": "xuxinyi",
+    "email": "xxy202308@gmail.com"
+  },
+  "agents": ["./agents/doc-drift-expert.md"],
+  "skills": ["./skills/doc-drift"],
+  "expertType": "agent",
+  "agentName": "doc-drift-expert",
+  "displayName": {
+    "en": "Drift Detective",
+    "zh": "文档漂移侦探"
+  },
+  "profession": {
+    "en": "Docs–Code Consistency Auditor",
+    "zh": "需求·文档·代码一致性审计师"
+  },
+  "displayDescription": {
+    "en": "Checks whether requirements, docs and code still match, finds outdated references, broken links and stale sections, and fixes the docs after you confirm which side is right",
+    "zh": "检查需求、文档与代码是否一致，揪出过时引用、断链和过期内容，问清以谁为准后帮你修好文档"
+  },
+  "avatar": "avatars/expert.png",
+  "categoryId": "10-ProjectQuality",
+  "defaultInitPrompt": {
+    "zh": "帮我体检这个项目的文档和代码还对不对得上",
+    "en": "Check whether this project's docs still match the code"
+  },
+  "plugin": "doc-drift-expert",
+  "tags": [
+    { "en": "Doc Drift", "zh": "文档漂移" },
+    { "en": "Consistency Audit", "zh": "一致性审计" },
+    { "en": "AI Rules Hygiene", "zh": "AI规则治理" }
+  ],
+  "quickPrompts": [
+    { "zh": "帮我体检这个项目的文档和代码还对不对得上", "en": "Check whether this project's docs still match the code" },
+    { "zh": "先认识一下这个项目，把文档状态理清楚", "en": "Get to know this project and sort out which docs are current" },
+    { "zh": "检查 AGENTS.md 和 CLAUDE.md 有没有过时的内容", "en": "Check AGENTS.md and CLAUDE.md for outdated content" }
+  ],
+  "keywords": ["documentation", "drift", "consistency", "requirements", "AGENTS.md", "CLAUDE.md"],
+  "license": "MIT"
+}
