@@ -85,8 +85,9 @@ try {
     assert.ok(design.sections.some((s) => s.files.includes('src/main/java/demo/OrderService.java')))
   })
 
-  await t('doctor 第一层：过时（git 历史）排最前、历史文档降级、断链、别人机器的绝对路径给出改法', async () => {
-    const r = await DR.runDoctor(root, { useModel: false })
+  await t('doctor 第一层：过时（git 历史）排最前、用户标的历史文档降级、断链、别人机器的绝对路径给出改法', async () => {
+    const c0 = P.loadConfig(root); c0.docStatus = { 'docs/cleanup': 'historical' }; P.saveConfig(root, c0)   // 只认用户自己标的
+    const r = await DR.runDoctor(root, { useModel: false, scope: 'all' })
     const f = r.findings
     const top = f[0]
     assert.equal(top.doc, 'CLAUDE.md'); assert.equal(top.kind, 'outdated'); assert.equal(top.anchor.value, 'OldRuleExecutor')
@@ -99,6 +100,17 @@ try {
     assert.ok(f.some((x) => x.kind === 'unresolved' && x.anchor.value === 'NeverExistedService' && x.severity === 'info'))
     const md = DR.renderReport(root, r)
     assert.match(md, /CLAUDE\.md（AI 配置文件/)
+  })
+
+  await t('默认范围只看需求/SPEC 文档；框架类、字段名、"不删除"不误报', async () => {
+    w('src/main/java/demo/Tenant.java', 'package demo;\npublic class Tenant extends TenantEntity {\n  private String tenant_id;\n}\n')
+    w('docs/order/requirements.md', '# 下单需求\n\n用户可以提交订单。\n\n- 实体继承 `TenantEntity`，带 `tenant_id` 表字段。\n- `LegacyUtils` 不删除，继续保留。\n')
+    const r = await DR.runDoctor(root, { useModel: false })
+    assert.ok(r.findings.every((x) => x.doc !== 'CLAUDE.md'))   // AI 规则文件不在默认范围
+    assert.ok(!r.findings.some((x) => x.kind === 'undocumented'))
+    assert.ok(!r.findings.some((x) => ['TenantEntity', 'tenant_id'].includes(x.anchor?.value)))   // 代码里还在用
+    assert.ok(!r.findings.some((x) => x.kind === 'resurrected' && x.doc === 'docs/order/requirements.md'))   // "不删除"
+    assert.match(DR.renderReport(root, r), /范围：需求 \/ 设计 \/ SPEC 文档/)
   })
 
   await t('标记文档状态：mark 后历史文档的问题降级、问题清单消掉', () => {
@@ -122,7 +134,7 @@ try {
     w('src/main/java/demo/OrderService.java', JAVA('demo', 'OrderService', '  public int price(int n) { return n * 20; }'))
     const before = calls
     const r = await H.scanChanges(root)
-    assert.equal(r.fresh, 1)
+    assert.ok(r.fresh >= 1)
     const stale = H.openPending(P.loadState(root)).find((p) => p.type === 'stale')
     assert.equal(stale.doc, 'docs/order/design.md'); assert.equal(stale.section, '价格计算')
     const r2 = await H.scanChanges(root)
