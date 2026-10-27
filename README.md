@@ -45,11 +45,14 @@ node doc-drift/bin/doc-drift.mjs doctor-check     # 检查 Node、git、密钥�
 node doc-drift/test/selftest.mjs                  # 自测（临时仓库 + 假接口，不需要密钥）
 ```
 
-**Skill**：把 `SKILL.md` 复制到宿主的技能目录，并把里面的命令路径改成你的安装位置：
+**Skill**：`node scripts/install-skill.mjs`。它把 `SKILL.md` 连同工具代码（放在技能目录的 `scripts/` 下）装到本机已有的技能目录，技能里不用写死路径：
 
-- Codex：`~/.codex/skills/doc-drift/SKILL.md`
-- Claude Code：`~/.claude/skills/doc-drift/SKILL.md`
-- DSH：`~/.dsh/skills/doc-drift/SKILL.md`
+- Codex：`~/.codex/skills/doc-drift/`
+- Claude Code：`~/.claude/skills/doc-drift/`
+- DSH：`~/.dsh/skills/doc-drift/`
+- WorkBuddy：`~/.workbuddy/skills/doc-drift/`（多一条"没有 node 时用 WorkBuddy 自带的"）
+
+`SKILL.md` 是唯一来源，WorkBuddy 版 `workbuddy/skill/SKILL.md` 由这个脚本生成，不要手改。
 
 **钩子**（`<路径>` 换成 `bin/doc-drift.mjs` 的绝对路径）：
 
