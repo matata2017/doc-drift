@@ -74,6 +74,37 @@ try {
     assert.deepEqual(anchors.map((a) => [a.value, a.gone]), [['third/decisionengine/', false], ['pricingRule/', true]])
   })
 
+  await t('"已删除"按主语判断：真实项目里出过的误报不再出现', () => {
+    // [这一行, 引用, 应不应该算"说它已删除"]
+    const CASES = [
+      ['| `EndAuditListenerServiceTask` | 删除已注释的 `synchronizeApplyPayInformation` 引用 |', 'EndAuditListenerServiceTask', false],
+      ['| `YonBipController` + `yonbip/util/*`（除 Base64Util） | 删除；**先将** `Base64Util` **迁至** `common/utils` |', 'YonBipController', true],
+      ['| `YonBipController` + `yonbip/util/*`（除 Base64Util） | 删除；**先将** `Base64Util` **迁至** `common/utils` |', 'Base64Util', false],
+      ['4. 删除 `TestRiskControlRulesController` + Service + ServiceImpl；**保留** `TestController`、`FinanceJobController`', 'TestRiskControlRulesController', true],
+      ['4. 删除 `TestRiskControlRulesController` + Service + ServiceImpl；**保留** `TestController`、`FinanceJobController`', 'FinanceJobController', false],
+      ['| `Che300GeneratorRecordServiceImpl` | 回调主事务：幂等校验 → 物理删除旧记录 → 落库 |', 'Che300GeneratorRecordServiceImpl', false],
+      ['若需独立拆分渠道商代码，可复制 `TeamController` / `TeamServiceImpl` 后删除代理商特有逻辑', 'TeamServiceImpl', false],
+      ['`InformationMapper.xml` 的 AI 统计过滤 `ti.is_deleted`；', 'InformationMapper.xml', false],
+      ['| 删除 | `POST /blade-api/product/removeProduct` | `ProductDTO` |', 'ProductDTO', false],
+      ['| `controller/ApplyPay*.java` | 删除 |', 'controller/ApplyPay*.java', true],
+      ['> 本地规则执行器（`RuleExecutor` 接口及 `business/rule/impl/*RuleExecutor.java` 各规则类）已删除。', 'RuleExecutor', true],
+      ['`LegacyUtils` 不删除，继续保留。', 'LegacyUtils', false],
+      ['`OrderController` 已下线', 'OrderController', true],
+      ['度小满、`DxmService` 已删', 'DxmService', true],
+      ['- 删除 `FlowNodeEnum.BINDING_DEGREE_XIAOMAN`、`FlowNodeMiniEnum` 对应项', 'FlowNodeMiniEnum', false],
+      ['`AsynchronousThreadService` **不可整文件删除**——仍承担 yourongpost、SP 重试等', 'AsynchronousThreadService', false],
+      ['- **AC-CLEAN-03.2**：`FinanceJobController` 中 partner/archives 相关 Job 已移除；**品融 push Job 保留**。', 'FinanceJobController', false],
+      ['- `doHtmlToPdf`：Base64 HTML 上传 OSS，删除旧影像后写入 `PictureEntity`（征信报告 HTML）。', 'PictureEntity', false],
+      ['2. 删除 `H5IntakeContextServiceImpl` 对续办服务的依赖和 `triggerRecoveryRetry` 调用，恢复上下文纯查询职责。', 'H5IntakeContextServiceImpl', false],
+      ['| `TestRiskControlRulesController` + Service + ServiceImpl | 删除 |', 'TestRiskControlRulesController', true],
+    ]
+    const wrong = CASES.filter(([line, value, want]) => {
+      const a = S.docAnchors(line).anchors.find((x) => x.value === value || x.value.endsWith(value))
+      return !a || a.gone !== want
+    })
+    assert.deepEqual(wrong.map((c) => c[0]), [])
+  })
+
   await t('init：AI 配置直接定、模型分类、拿不准的进问题清单；生成文档↔代码映射', async () => {
     const r = await I.runInit(root, { useModel: true })
     P.saveConfig(root, r.config); P.saveMap(root, r.map); P.ensureGitignore(root)
