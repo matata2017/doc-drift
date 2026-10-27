@@ -245,6 +245,24 @@ const cmds = {
     console.log(`以后不再报：${found.map((f) => f.id).join(' ')}`)
   },
 
+  /**
+   * 用户判断"文档才是对的，代码有问题"：doc-drift 不改代码，只把这些条目记进 .doc-drift/code-todo.md，
+   * 交给用户自己的改代码流程；以后体检不再拿去问，报告里单列"代码待改"。
+   *   code-todo <F编号...> [--note "说明"]
+   */
+  'code-todo'() {
+    const root = rootOrDie()
+    const ids = new Set(pos.slice(1))
+    const found = DR.lastFindings(root).filter((f) => ids.has(f.id))
+    if (!found.length) return console.error('用法：doc-drift code-todo <F编号...> [--note "说明"]（编号来自最近一次 doctor 报告）')
+    const note = flag('--note', '')
+    const c = P.loadConfig(root)
+    c.codeTodo = [...new Set([...(c.codeTodo ?? []), ...found.map(DR.signature)])]
+    P.saveConfig(root, c)
+    P.appendCodeTodo(root, found, note)
+    console.log(`已记入 .doc-drift/code-todo.md：${found.map((f) => f.id).join(' ')}（不改代码，交给你的改代码流程）`)
+  },
+
   pending() {
     const root = rootOrDie()
     const list = H.openPending(P.loadState(root))
