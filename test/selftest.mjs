@@ -97,6 +97,7 @@ try {
       ['- `doHtmlToPdf`：Base64 HTML 上传 OSS，删除旧影像后写入 `PictureEntity`（征信报告 HTML）。', 'PictureEntity', false],
       ['2. 删除 `H5IntakeContextServiceImpl` 对续办服务的依赖和 `triggerRecoveryRetry` 调用，恢复上下文纯查询职责。', 'H5IntakeContextServiceImpl', false],
       ['| `TestRiskControlRulesController` + Service + ServiceImpl | 删除 |', 'TestRiskControlRulesController', true],
+      ['- 依赖：`ControlRules`、远程决策引擎（`DecisionRiskControlAdapter`；本地 RuleExecutor 实现类已删除）、系统参数', 'DecisionRiskControlAdapter', false],
     ]
     const wrong = CASES.filter(([line, value, want]) => {
       const a = S.docAnchors(line).anchors.find((x) => x.value === value || x.value.endsWith(value))
