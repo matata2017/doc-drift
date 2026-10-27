@@ -1,0 +1,10 @@
+{
+  "name": "doc-drift",
+  "version": "0.1.0",
+  "description": "Keep requirements, docs and code in sync: deterministic reference checks, StartLux-judged staleness, and a quiet daily hook for Codex / Claude Code / DSH.",
+  "type": "module",
+  "bin": { "doc-drift": "bin/doc-drift.mjs" },
+  "scripts": { "test": "node test/selftest.mjs" },
+  "engines": { "node": ">=18.17" },
+  "license": "MIT"
+}
