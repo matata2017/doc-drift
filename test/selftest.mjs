@@ -113,7 +113,7 @@ try {
     assert.match(DR.renderReport(root, r), /范围：需求 \/ 设计 \/ SPEC 文档/)
   })
 
-  await t('代码待改：用户确认文档为准 → 记进 code-todo.md、不改代码、以后不再问、报告单列', async () => {
+  await t('代码待改：文档为准 → 记进 code-todo.md、不改代码、不再问；用户改好代码后重跑 → 自动对齐打勾', async () => {
     const before = await DR.runDoctor(root, { useModel: false, scope: 'all' })
     const target = before.findings.find((x) => x.kind === 'outdated' && x.anchor.value === 'OldRuleExecutor')
     const c = P.loadConfig(root); c.codeTodo = [DR.signature(target)]; P.saveConfig(root, c)
@@ -125,7 +125,16 @@ try {
     assert.equal(same.severity, 'info'); assert.ok(same.codeTodo)            // 不再算"需要处理"，不再问
     assert.match(DR.renderReport(root, after), /## 代码待改（用户已确认文档为准/)
     assert.ok(existsSync(join(root, 'src/main/java/demo/OrderService.java')))   // 代码没被动过
-    c.codeTodo = []; P.saveConfig(root, c)
+    assert.equal(after.stats.codeTodoOpen, 1)
+
+    // 用户按自己的开发流程把代码改好（这里模拟：把规则执行器加回来）→ 重跑体检 → 自动对齐、打勾
+    w('src/main/java/demo/OldRuleExecutor.java', JAVA('demo', 'OldRuleExecutor'))
+    const done = await DR.runDoctor(root, { useModel: false, scope: 'all' })
+    assert.equal(done.stats.codeTodoClosed, 1); assert.equal(done.stats.codeTodoOpen, 0)
+    assert.match(readFileSync(join(root, '.doc-drift', 'code-todo.md'), 'utf8'), /- \[x\] \*\*CLAUDE\.md:3\*\*[\s\S]*重跑体检已对齐/)
+    assert.deepEqual(P.loadConfig(root).codeTodo, [])
+    assert.match(DR.renderReport(root, done), /本次已对齐 1 条/)
+    unlinkSync(join(root, 'src/main/java/demo/OldRuleExecutor.java'))          // 还原，后面的用例照旧
   })
 
   await t('标记文档状态：mark 后历史文档的问题降级、问题清单消掉', () => {
