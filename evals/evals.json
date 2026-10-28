@@ -1,0 +1,40 @@
+{
+  "skill_name": "doc-drift",
+  "notes": "测试项目是 pinrong-online 在 HEAD（本次同步之前）的克隆；用户不在线，提问写进 outputs/questions.md，再按 user_answers 继续，没覆盖的按自己推荐的选项继续。",
+  "user_answers": [
+    "风控准入条件类文档：规则本身迁移后没变，规则清单要保留，执行改由远程决策引擎",
+    "代码清理、决策引擎切流这类方案文档：已经执行完了，当作已完成的记录",
+    "TestRiskControlRulesController：以代码为准，保留",
+    "其它不一致：以当前代码为准"
+  ],
+  "evals": [
+    {
+      "id": 1,
+      "name": "qr-design-sync",
+      "prompt": "帮我看看 mdfile/二维码生成/design.md 和现在的代码还对得上吗？对不上的帮我处理掉。",
+      "expected_output": "核实出二维码已改为 H5 一次性 Token（Redis 只存摘要、h5:qr:* 键、分布式锁）、新增 refreshSalesmanQR、只允许为本人生成；文档按代码重写这些部分；不改代码、不提交。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "risk-rules-migrated",
+      "prompt": "风控模型下面车辆准入条件、申请人准入条件、征信准入条件这三篇需求文档，跟代码对一下，对不上的处理掉。",
+      "expected_output": "核实出本地 RuleExecutor / RuleEngine 已删除、规则改由决策引擎执行（RiskControlManagement → DecisionRiskControlAdapter）；保留三篇的规则清单（业务内容），加现状说明，已删除的类名不再当代码引用；不整段删除规则表；不改代码、不提交。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "cleanup-plan-docs",
+      "prompt": "mdfile/代码清理 下面的两篇文档好像跟代码对不上了，帮我处理一下。",
+      "expected_output": "认出这是一次已执行完的清理方案/记录，大量'引用已删除'正是清理的目的；建议并标成已完成的记录（顶部状态说明），而不是逐条改写几十处；把'计划删除 TestRiskControlRulesController 但代码里还在'当作冲突提出来；不改代码、不提交。",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "abandon-order-stale",
+      "prompt": "检查一下 mdfile/进件管理/弃单/requirements.md 是不是过时了，过时就更新。",
+      "expected_output": "核实出状态枚举新增信审拒单(6)、orderAbandonment 现在只允许审核中(4)的进件弃单；直接按代码更新文档（属于文档落后，不必问）；不改代码、不提交。",
+      "files": []
+    }
+  ]
+}
