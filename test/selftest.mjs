@@ -60,6 +60,7 @@ const I = await import('../lib/init.mjs')
 const DR = await import('../lib/doctor.mjs')
 const H = await import('../lib/hook.mjs')
 const S = await import('../lib/scan.mjs')
+const A = await import('../lib/audit.mjs')
 let ok = 0
 const t = async (name, fn) => { await fn(); ok++; console.log('✓ ' + name) }
 
@@ -195,6 +196,28 @@ try {
     assert.equal(stale.doc, 'docs/order/design.md'); assert.equal(stale.section, '价格计算')
     const r2 = await H.scanChanges(root)
     assert.equal(r2.fresh, 0); assert.equal(calls, before + 1)              // 没有新改动：不再问
+  })
+
+  await t('全面核对：拆成说法和代码事实清单 → 没交卷、缺证据、编造的证据都对不上账 → 补齐后覆盖 100% → 复核清单', async () => {
+    const plan = A.planAudit(root, { docs: ['docs/order/design.md'] })
+    assert.equal(plan.docs.length, 1); assert.ok(plan.docs[0].claims >= 2)
+    const task = JSON.parse(readFileSync(join(root, '.doc-drift/audit/tasks/T001.json'), 'utf8'))
+    assert.ok(task.claims.some((c) => /乘 10/.test(c.text)))                                         // 文档方向：每句一条
+    assert.ok(task.facts.some((f) => f.kind === '方法' && /OrderService\.price/.test(f.text)))        // 代码方向：关联代码的公开方法
+    assert.equal(A.verifyAudit(root).done, 0)                                                         // 没交卷
+    const write = (r) => writeFileSync(join(root, '.doc-drift/audit/results/T001.json'), JSON.stringify({ task: 'T001', ...r }))
+    const facts = task.facts.map((f) => ({ id: f.id, verdict: '不需要写' }))
+    write({ claims: task.claims.map((c) => ({ id: c.id, verdict: '一致', evidence: 'src/main/java/demo/Nope.java:3' })), facts })
+    assert.match(A.verifyAudit(root).tasks[0].problems.join(), /证据文件不存在/)                       // 编造的证据
+    write({ claims: task.claims.slice(1).map((c) => ({ id: c.id, verdict: '不是事实' })), facts })
+    assert.match(A.verifyAudit(root).tasks[0].problems.join(), /没有结论/)                             // 漏了一条
+    const [first, ...rest] = task.claims
+    write({ claims: [{ id: first.id, verdict: '不一致', evidence: 'src/main/java/demo/OrderService.java:3', code: '乘 20', fix: '改成乘 20' }, ...rest.map((c) => ({ id: c.id, verdict: '不是事实' }))], facts })
+    const v = A.verifyAudit(root)
+    assert.equal(v.done, v.all)
+    const r = A.reviewAudit(root)
+    assert.equal(r.mismatch, 1)
+    assert.match(readFileSync(r.file, 'utf8'), /不一致（逐条复核）[\s\S]*改成乘 20/)
   })
 
   await t('doctor 分批：每次只判下一批，判过的记住；全判完后再跑不再调用模型', async () => {

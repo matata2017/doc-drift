@@ -4,6 +4,7 @@
  *
  *   doc-drift init [--no-model]            认识项目：文档分类（StartLux）、业务域、文档↔代码映射；输出要问用户的问题
  *   doc-drift doctor [--scope spec|ai|all] [--no-model] [--max N] [--json]   体检（默认只查需求/SPEC↔代码），报告写到 .doc-drift/reports/日期.md
+ *   doc-drift audit plan [文档…] | verify | review   全面核对：拆成清单 → 子代理逐条评价 → 对账 → 主模型复核
  *   doc-drift mark <文档或目录> <current|historical|archived>   定文档状态（历史记录不要求跟代码同步）
  *   doc-drift answer "<问题>" "<结论>"     记下用户的结论（之后不再重复问）
  *   doc-drift ignore <F编号...>            这些体检项不需要处理，以后不再报
@@ -24,6 +25,7 @@ import * as DR from '../lib/doctor.mjs'
 import * as H from '../lib/hook.mjs'
 import * as D from '../lib/decide.mjs'
 import * as G from '../lib/git.mjs'
+import * as A from '../lib/audit.mjs'
 
 const args = process.argv.slice(2)
 const flag = (n, d) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d }
@@ -343,6 +345,37 @@ const cmds = {
     if (!has('--quiet')) console.log(JSON.stringify(r))
   },
 
+  /** 全面核对：audit plan [文档或目录…] / audit verify / audit review / audit status */
+  async audit() {
+    const root = rootOrDie()
+    const sub = pos[1] ?? 'status'
+    if (sub === 'plan') {
+      const plan = A.planAudit(root, { docs: pos.slice(2), scope: flag('--scope', 'spec') })
+      const c = plan.docs.reduce((s, d) => s + d.claims, 0), f = plan.docs.reduce((s, d) => s + d.facts, 0)
+      console.log(`核对计划：${plan.docs.length} 篇文档，说法 ${c} 条、代码事实 ${f} 条，切成 ${plan.tasks.length} 份任务单`)
+      for (const t of plan.tasks) console.log(`  ${t.id}  ${t.doc}  说法 ${t.claims.length} · 事实 ${t.facts.length}  → .doc-drift/audit/tasks/${t.id}.md`)
+      console.log('每份任务单交给一个子代理逐条评价，结果写到 .doc-drift/audit/results/<任务号>.json；然后 audit verify 对账。')
+      return
+    }
+    if (sub === 'verify') {
+      const r = A.verifyAudit(root)
+      if (r.error) return console.error(r.error)
+      console.log(`对账：${r.done}/${r.all} 份任务单合格（说法 ${r.totalClaims} 条、代码事实 ${r.totalFacts} 条）`)
+      for (const t of r.tasks.filter((x) => !x.done)) console.log(`  ✗ ${t.id} ${t.doc}：${t.problems.slice(0, 6).join('；')}${t.problems.length > 6 ? ` 等 ${t.problems.length} 处` : ''}`)
+      if (r.done === r.all) console.log('全部合格，覆盖率 100%。下一步：audit review 生成复核清单。')
+      else process.exitCode = 2
+      return
+    }
+    if (sub === 'review') {
+      const r = A.reviewAudit(root)
+      if (!r) return console.error('还没有核对计划：先 audit plan')
+      console.log(`复核清单：${r.docs} 篇，不一致 ${r.mismatch} 条，代码有文档没写 ${r.missing} 条 → ${r.file}`)
+      return
+    }
+    const s = A.auditStatus(root)
+    console.log(s ? `核对计划 ${s.docs} 篇、${s.tasks} 份任务单，已交卷 ${s.submitted}` : '还没有核对计划：audit plan [文档…]')
+  },
+
   async 'doctor-check'() {
     const [maj, min] = process.versions.node.split('.').map(Number)
     console.log(`node ${process.versions.node} ${maj > 18 || (maj === 18 && min >= 17) ? 'OK' : '需要 ≥ 18.17'}`)
@@ -356,5 +389,5 @@ const cmds = {
 }
 
 const run = cmds[args[0]]
-if (!run) { console.log(readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(2, 18).map((l) => l.replace(/^ \* ?/, '')).join('\n')); process.exit(args[0] ? 1 : 0) }
+if (!run) { console.log(readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(2, 19).map((l) => l.replace(/^ \* ?/, '')).join('\n')); process.exit(args[0] ? 1 : 0) }
 Promise.resolve(run()).catch((e) => { if (args[0] !== 'hook' || process.env.DOC_DRIFT_DEBUG) { console.error(e); process.exitCode = 1 } })
