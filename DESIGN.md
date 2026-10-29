@@ -16,10 +16,10 @@
 
 ## 2. 三类东西与"以谁为准"
 
-| 类别 | 例子（pinrong-online） | 描述的是 | 冲突时 |
+| 类别 | 例子 | 描述的是 | 冲突时 |
 |---|---|---|---|
-| **需求** | `mdfile/v1.7/requirements.md`、各业务域 `requirements.md`、对话里你刚说的新要求 | 应该怎样 | 你**最新确认**的需求为准；代码没实现 → 记"未实现"，不是改需求 |
-| **说明文档** | `design.md`、`代码解读.md`、接口清单、`mdfile/README.md` 索引、AGENTS.md / CLAUDE.md | 现在是怎样 | 代码为准；文档跟着改 |
+| **需求** | `docs/v1.7/requirements.md`、各业务域 `requirements.md`、对话里你刚说的新要求 | 应该怎样 | 你**最新确认**的需求为准；代码没实现 → 记"未实现"，不是改需求 |
+| **说明文档** | `design.md`、`代码解读.md`、接口清单、`docs/README.md` 索引、AGENTS.md / CLAUDE.md | 现在是怎样 | 代码为准；文档跟着改 |
 | **代码** | Java、Mapper XML、SQL、配置 | 现在是怎样 | — |
 
 拿不准以谁为准（例如代码行为和需求文档不一致，不知道是 bug 还是需求已变）→ **问你**，答案记进 `.doc-drift/answers.md`，下次不再问。
@@ -52,9 +52,9 @@ D5 不看"谁比谁新"：时间戳只能说明改过，说明不了内容还对
 
 ### init：认识项目
 
-1. **扫描**（本地、只读）：Markdown 分布、代码模块（pom 子模块 / src 目录）、索引表（如 `mdfile/README.md` 的"主题域 → 文档入口 → 代码锚点"）。
+1. **扫描**（本地、只读）：Markdown 分布、代码模块（pom 子模块 / src 目录）、索引表（如 `docs/README.md` 的"主题域 → 文档入口 → 代码锚点"）。
 2. **分类**（StartLux，每请求 ≤ 25 题）：每篇文档判 类型（需求 / 设计 / 代码解读 / 接口清单 / 运维与 SQL / AI 配置 / 评审记录）和 状态（当前有效 / 已归档 / 不确定）；把文档归到业务域。
-3. **问你**（只问拿不准的）：例如"`v1.6/` 还算当前有效吗""需求以 `mdfile/<业务域>/requirements.md` 为准，还是以版本目录为准""`doc/sql` 要不要纳入检查"。
+3. **问你**（只问拿不准的）：例如"`v1.6/` 还算当前有效吗""需求以 `docs/<业务域>/requirements.md` 为准，还是以版本目录为准""`doc/sql` 要不要纳入检查"。
 4. **写出** `config.json`、`map.json`、`answers.md`，并给出一份初次体检摘要。
 5. **发现 Trellis**：把活跃任务（in_progress / review，限当前分支）和当前 SPEC 写进 `config.trellis`，任务文档（prd/design/requirements/spec）并进 `map.json`——这是"代码 → 文档 → 任务"能一路反查的前提。`.trellis` 在默认盘点里被排除，所以这一步单独补。
 
@@ -91,13 +91,13 @@ D5 不看"谁比谁新"：时间戳只能说明改过，说明不了内容还对
 - 体检不放在钩子里：当前任务收口跑 `doc-drift doctor`；要覆盖所有活跃任务，手动 `doc-drift doctor full`。
 - 任务已完成、没开新任务又改代码：钩子按 `map.json` 的文档↔代码映射判断，命中才提醒；用户说"先记下来"只记一笔（`doc-drift defer`，不存 patch，证据由下次 `doctor` 用现在的代码重算）。
 
-- 一行提醒的样子：`[文档漂移 · doc-drift] 待同步 2 项：mdfile/进件管理/弃单/design.md（InformationFlowableServiceImpl 已改）… 处理：doc-drift pending`
+- 一行提醒的样子：`[文档漂移 · doc-drift] 待同步 2 项：docs/order/design.md（OrderService 已改）… 处理：doc-drift pending`
 - 钩子不阻断、不改文件；没有 `.doc-drift/config.json` 的项目直接跳过（DSH 的钩子是全局的）。
 - 冷却：同一条待办只提醒一次；两次提醒至少隔 3 轮；你说"跳过"的待办不再提醒。
 
 ## 6.1 不依赖 git 提交
 
-很多改动和文档没提交（pinrong-online 有 300+ 个未跟踪文件，其中 `.trellis` / `.dsh` / `.codex` 这类 Harness 目录整片未跟踪），所以 git 只是补充：反查任务和轮末候选都会跳过这些 Harness 目录，不然每次都会被算成"这轮改了几百个文件"。
+很多改动和文档没提交（大型仓库常有 300+ 个未跟踪文件，其中 `.trellis` / `.dsh` / `.codex` 这类 Harness 目录整片未跟踪），所以 git 只是补充：反查任务和轮末候选都会跳过这些 Harness 目录，不然每次都会被算成"这轮改了几百个文件"。
 
 | 需要的信息 | 来源 |
 |---|---|
@@ -114,9 +114,9 @@ D5 不看"谁比谁新"：时间戳只能说明改过，说明不了内容还对
 - `doc-drift replay` / `doc-drift eval`：**还没实现**（计划：拿 git 历史当标准答案回放"改了代码、过一阵才补文档"的事例；评测需求变更识别）。
 - 目标：提醒准确率 ≥ 80% 再默认开 remind；默认只记录（observe）。
 
-## 8. 与旧方案的关系（pinrong-online）
+## 8. 与旧方案的关系
 
-旧的 `.codex/hooks/requirements-drift.py` + `.trellis/local/startlux-advisor.mjs` + `.trellis/drift-guide.md`：
+旧的 Codex 钩子 + Trellis 本地 advisor：
 - 被本方案替换：从 `.codex/hooks.json` 摘除旧钩子，AGENTS.md 里的说明改指向本 Skill。
 - 可复用的：advisor 的 drift 题目与阈值（把握 ≥ 0.8、"都不是" < 0.2）、"确认后才同步"的原则。
 - 去掉的：按轮数计数邀请、依赖主会话写变化摘要、和 Trellis 任务流程强绑定。
@@ -129,4 +129,4 @@ D5 不看"谁比谁新"：时间戳只能说明改过，说明不了内容还对
 
 ## 10. 规模
 
-`map.json` 是纯 JSON（pinrong-online：125 篇 337 KB、472 节、1670 条文件引用，解析 1.4 ms、建反查索引 0.5 ms）。文档上千篇后解析到 ~14 ms、再往上到百毫秒级，就换成 `node:sqlite` 单表 `section(doc, line, heading, file)` + `file` 索引 + `doc_hash` 增量重建；`doctor full` 的整仓库盘点（1949 个代码文件约 0.4 s）和逐篇 `git log` 才是更早的瓶颈，到时合并成一次 `git log --name-only`。日常 `doctor` 只查当前任务，不受项目历史规模影响。
+`map.json` 是纯 JSON，千篇以内解析只要几毫秒，建反查索引更快。文档上千篇后解析到几十毫秒、再往上到百毫秒级，就换成 `node:sqlite` 单表 `section(doc, line, heading, file)` + `file` 索引 + `doc_hash` 增量重建；`doctor full` 的整仓库盘点和逐篇 `git log` 才是更早的瓶颈，到时合并成一次 `git log --name-only`。日常 `doctor` 只查当前任务，不受项目历史规模影响。

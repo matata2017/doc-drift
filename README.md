@@ -119,10 +119,10 @@ doc-drift status
 - 钩子本身不发请求；只有用户确认后的 `check` 和手动 `doctor` 才发。
 - 发出前脱敏：`sk-…`、≥32 位随机串、`password=…`/`token: …` 这类写法替换为 `<已脱敏>`。不能覆盖所有密钥格式，敏感项目请评估。
 
-## 实测（pinrong-online，Java 后端，1949 个代码文件、192 篇文档）
+## 实测
 
-- **init --no-model**：秒级；126 篇文档有代码映射，发现 3 个活跃 Trellis 任务、6 篇 SPEC 文档；47 篇还没有分类状态（要带模型跑 `init`，或用 `mark` 手动定）。
-- **doctor full --no-model**：2.4 秒，只查这 3 个任务的 8 篇文档（6 篇 SPEC + AGENTS.md + CLAUDE.md）。
+- **init --no-model**：秒级；自动建立代码映射、发现活跃 Trellis 任务和 SPEC 文档；还没分类状态的要带模型跑 `init`，或用 `mark` 手动定。
+- **doctor full --no-model**：2.4 秒，只查活跃任务的 SPEC 文档和 AI 规则文件。
 - **钩子**：pre-step 218 ms、turn-stopping 205 ms（含 node 启动）；没有候选时完全不说话。
 - **steer 链路**：turn-stopping 有候选时拦下这一轮，实测模型先收到注入消息再问用户（DSH）。
 - 旧版"每轮判需求"的实测：97 次模型请求里 93 次什么也没产出（96% 浪费），所以改成"用户确认后才查"。
@@ -132,7 +132,7 @@ doc-drift status
 - 代码索引是正则做的（Java/Spring 最完整：类、方法、`@RequestMapping` 路径、Mapper/SQL 表名；JS/TS/Python/Go 只有类和函数名）。
 - "文档和代码对不上"每次最多判断 40 段（`--max` 可调），优先 AI 配置文件和改动最多的；是抽样，不是逐条覆盖。
 - 需求条目逐条对实现（DESIGN.md 的 D6/D7）没有单独的检测器：`doctor` 会把需求文档也当作"文档说法"和代码对照，只能覆盖文档里写到的部分。
-- `map.json` 是纯 JSON（125 篇约 337 KB、解析 1.4 ms）。文档上千篇后要换 `node:sqlite` + `file` 索引，设计见 DESIGN.md §10。
+- `map.json` 是纯 JSON（千篇以内解析只要几毫秒）。文档上千篇后要换 `node:sqlite` + `file` 索引，设计见 DESIGN.md §10。
 
 ## 致谢
 
