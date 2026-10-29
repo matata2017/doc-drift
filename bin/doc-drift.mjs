@@ -3,7 +3,9 @@
  * doc-drift — 让需求、文档、代码长期对得上。
  *
  *   doc-drift init [--no-model]            认识项目：文档分类（StartLux）、业务域、文档↔代码映射；输出要问用户的问题
- *   doc-drift doctor [--scope spec|ai|all] [--no-model] [--max N] [--json]   体检（默认只查需求/SPEC↔代码），报告写到 .doc-drift/reports/日期.md
+ *   doc-drift doctor [full] [--task <id>] [--scope spec|ai|all] [--no-model] [--max N] [--json]
+ *                                          默认只查当前 Trellis 任务（当前 SPEC）↔ 代码；full 查整个项目
+ *   doc-drift tasks                        列出 Trellis 任务和它们引用的文档
  *   doc-drift audit plan [文档…] | verify | review   全面核对：拆成清单 → 子代理逐条评价 → 对账 → 主模型复核
  *   doc-drift mark <文档或目录> <current|historical|archived>   定文档状态（历史记录不要求跟代码同步）
  *   doc-drift answer "<问题>" "<结论>"     记下用户的结论（之后不再重复问）
@@ -13,6 +15,7 @@
  *   doc-drift label <P编号> <right|wrong>  标注提醒对不对（用来调阈值）
  *   doc-drift mode <observe|remind>        钩子模式：只记录 / 对话里一行提醒
  *   doc-drift status                       概况
+ *   doc-drift check                        用户确认后：只核对刚才那一轮改动涉及的文档小节（才调模型）
  *   doc-drift hook                         作为钩子运行（Codex / Claude Code / DSH 通用）
  *   doc-drift doctor-check                 检查环境（Node、git、StartLux 密钥）
  * 通用参数：--root <项目目录>（默认从当前目录往上找 .doc-drift/）
@@ -26,11 +29,12 @@ import * as H from '../lib/hook.mjs'
 import * as D from '../lib/decide.mjs'
 import * as G from '../lib/git.mjs'
 import * as A from '../lib/audit.mjs'
+import * as T from '../lib/trellis.mjs'
 
 const args = process.argv.slice(2)
 const flag = (n, d) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d }
 const has = (n) => args.includes(n)
-const VALUED = new Set(['--root', '--max', '--scope', '--except'])
+const VALUED = new Set(['--root', '--max', '--scope', '--except', '--task', '--section', '--note'])
 const pos = args.filter((a, i) => !a.startsWith('--') && !VALUED.has(args[i - 1]))
 
 function rootOrDie({ allowNew = false } = {}) {
@@ -146,6 +150,7 @@ const cmds = {
     const unknown = stats.docs - Object.values(stats.statusCount).reduce((s, v) => s + v, 0) + (stats.statusCount.unknown ?? 0)
     console.log(`文档 ${stats.docs} 篇：${sc || '还没有定状态'}${unknown ? `；未定状态 ${unknown} 篇${useModel ? '' : '（没有 StartLux 密钥：请按目录判断后用 mark 记下）'}` : ''}`)
     console.log(`业务域 ${stats.domains} 个（来自索引表）；与代码耦合的文档 ${stats.mapped} 篇`)
+    console.log(`Trellis 活跃任务 ${stats.trellis.tasks} 个、文档 ${stats.trellis.docs} 篇${stats.trellis.current ? `；当前 SPEC：${stats.trellis.current}` : '；没有指向中的任务'}（doctor full 只查这些 + AI 规则文件）`)
     // 默认不问文档状态：一律以现状代码为准，体检时有不同再逐条问；需要区分历史记录时加 --ask-status
     const s2 = P.loadState(root)
     if (has('--ask-status') && questions.length) { const groups = groupQuestions(questions); s2.questions = questions; s2.questionGroups = groups; printQuestions(groups) } else { s2.questions = []; delete s2.questionGroups }
@@ -157,11 +162,18 @@ const cmds = {
 
   async doctor() {
     const root = rootOrDie()
+    const full = pos.includes('full') || has('--full')
     const useModel = !has('--no-model') && !!D.apiKey()
     if (!has('--no-model') && !useModel) console.log(D.KEY_HELP + '\n本次只做规则检查；"内容可能过时"一类只列候选，需要人或 agent 判断。')
     const scope = flag('--scope', 'spec')
     if (!['spec', 'ai', 'all'].includes(scope)) return console.error('--scope 只能是 spec（需求/SPEC，默认）、ai（AI 规则文件）、all（全部）')
-    const result = await DR.runDoctor(root, { useModel, scope, maxStale: Number(flag('--max', 40)), log: (s) => process.stderr.write(s + '\r') })
+    const ref = flag('--task', '')
+    const task = ref ? (T.listTasks(root).find((t) => t.id === ref || t.name === ref || t.dir.endsWith('/' + ref)) ?? null) : null
+    if (ref && !task) return console.error(`找不到任务：${ref}（可用 doc-drift tasks 看全部）`)
+    let result
+    try {
+      result = await DR.runDoctor(root, { useModel, scope, full, task, sessionId: process.env.DSH_SESSION_ID, maxStale: Number(flag('--max', 40)), log: (s) => process.stderr.write(s + '\r') })
+    } catch (e) { return console.error(e.message) }
     if (has('--json')) { console.log(JSON.stringify(result.findings, null, 1)); return }
     const md = DR.renderReport(root, result)
     const file = DR.saveReport(root, md, { findings: result.findings })
@@ -170,6 +182,18 @@ const cmds = {
     if (result.stats.staleLeft) console.log(`内容过时：已判断 ${result.stats.judgedTotal}/${result.stats.candidates} 段，还剩 ${result.stats.staleLeft} 段——处理完这批再跑一次 doctor 接着判`)
     if (result.stats.codeTodoClosed || result.stats.codeTodoOpen) console.log(`对齐：代码待改清单本次已对齐 ${result.stats.codeTodoClosed} 条（已打勾），仍待开发 ${result.stats.codeTodoOpen} 条（.doc-drift/code-todo.md）`)
     console.log(`报告：${file}`)
+  },
+
+  async tasks() {
+    const root = rootOrDie()
+    const list = T.listTasks(root)
+    if (!list.length) return console.log('没有 Trellis 任务（.trellis/tasks）')
+    const cur = T.snapshot(root).current?.dir
+    for (const t of list) {
+      const tag = t.dir === cur ? '  ← 当前 SPEC' : ''
+      console.log(`${t.status === 'completed' ? '✓' : '·'} ${t.id}  ${t.title ?? ''}  [${t.status ?? '?'}]  ${t.docs.length} 篇文档  ${t.dir}${tag}`)
+      for (const d of t.docs) console.log(`    ${d}`)
+    }
   },
 
   /** mark <路径> <状态>，或一次多个：mark 路径A=historical 路径B=current */
@@ -279,6 +303,22 @@ const cmds = {
     console.log('\n处理完：doc-drift resolve <编号> done　跳过：doc-drift resolve <编号> skip')
   },
 
+  /** defer <文档> [--section 小节] [--note 备注]：用户说"先记下来"，只记指针不查 */
+  defer() {
+    const root = rootOrDie()
+    const doc = pos[1]
+    if (!doc) return console.error('用法：doc-drift defer <文档> [--section 小节] [--note 备注]')
+    const r = H.defer(root, { doc, section: flag('--section', ''), note: flag('--note', '') })
+    console.log(`记下了：${r.doc}${r.section ? '「' + r.section + '」' : ''}（共 ${r.total} 条；doc-drift doctor 会用现在的代码重算差异）`)
+  },
+
+  deferred() {
+    const root = rootOrDie()
+    const list = P.loadState(root).deferred ?? []
+    if (!list.length) return console.log('没有暂不对齐的记录')
+    for (const d of list) console.log(`${d.at}  ${d.doc}${d.section ? '「' + d.section + '」' : ''}${d.note ? '  — ' + d.note : ''}`)
+  },
+
   /** resolve P1 P2 … <done|skip> */
   resolve() {
     const root = rootOrDie()
@@ -343,6 +383,18 @@ const cmds = {
     const root = rootOrDie()
     const r = await H.scanChanges(root)
     if (!has('--quiet')) console.log(JSON.stringify(r))
+  },
+
+  /** 用户确认后：只核对上一轮改动涉及的文档小节（这时才调模型） */
+  async check() {
+    const root = rootOrDie()
+    const r = await H.checkCandidates(root)
+    if (has('--json')) return console.log(JSON.stringify(r))
+    if (!r.candidates) return console.log('这一轮没有待核对的文档小节。')
+    for (const x of r.judged ?? []) console.log(`${x.verdict === 'outdated' ? '已过时' : '没问题'}：${x.doc}「${x.section}」${x.verdict === 'outdated' ? `（p=${x.p}）` : ''}`)
+    if (r.error) console.log(`判断失败：${r.error}`)
+    const open = H.openPending(P.loadState(root))
+    console.log(`核对 ${r.candidates} 处，待办共 ${open.length} 项（doc-drift pending）`)
   },
 
   /** 全面核对：audit plan [文档或目录…] / audit verify / audit review / audit status */
