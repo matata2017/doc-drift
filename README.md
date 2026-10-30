@@ -134,6 +134,10 @@ doc-drift status
 - 需求条目逐条对实现（DESIGN.md 的 D6/D7）没有单独的检测器：`doctor` 会把需求文档也当作"文档说法"和代码对照，只能覆盖文档里写到的部分。
 - `map.json` 是纯 JSON（千篇以内解析只要几毫秒）。文档上千篇后要换 `node:sqlite` + `file` 索引，设计见 DESIGN.md §10。
 
+## 开发 SOP
+
+跨项目的开发流程（通用版不依赖 BladeX；BladeX 项目只换技能列）：[docs/DEV-SOP.md](docs/DEV-SOP.md)。
+
 ## 致谢
 
 DOCER（Tan, Wagner, Treude）、Context Rot（Treude, Baltes）、Deep JIT Inconsistency Detection（Panthaplackel 等）、RepoAgent、Swimm、OpenSpec、Spec Growth Engine。
