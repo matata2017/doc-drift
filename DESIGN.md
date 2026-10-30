@@ -110,7 +110,7 @@ D5 不看"谁比谁新"：时间戳只能说明改过，说明不了内容还对
 
 ## 7. 质量与调参
 
-- `doc-drift label <待办> <right|wrong>`：标注每条提醒对不对，攒够样本再调阈值。
+- `doc-drift label <编号> <right|wrong> [--note 原因]`：标注每条结论对不对；标 `wrong` 会清掉这段的缓存、下次 `doctor` 重判，并记进 `answers.md`，反复误报时回查文档分类和映射。
 - `doc-drift replay` / `doc-drift eval`：**还没实现**（计划：拿 git 历史当标准答案回放"改了代码、过一阵才补文档"的事例；评测需求变更识别）。
 - 目标：提醒准确率 ≥ 80% 再默认开 remind；默认只记录（observe）。
 
@@ -123,7 +123,7 @@ D5 不看"谁比谁新"：时间戳只能说明改过，说明不了内容还对
 
 ## 9. 现在的落地状态（2026-10）
 
-已落地：确定性检查 D1–D4、`init`（含 StartLux 分类与 Trellis 发现）、`doctor`（当前 SPEC / full 双范围、文档 vs 当前代码、对齐方向）、`check`、`tasks`、`defer/deferred`、三个宿主的钩子（pre-step 只记账、turn-stopping 本地找候选 + 用户确认后 check）、`label`/`pending`/`resolve`、自测 22 项 + 变异测试。
+已落地：确定性检查 D1–D4、`init`（含 StartLux 分类与 Trellis 发现）、`doctor`（当前 SPEC / full 双范围、文档 vs 当前代码、对齐方向）、`check`、`tasks`、`defer/deferred`、三个宿主的钩子（pre-step 只记账、turn-stopping 本地找候选 + 用户确认后 check）、`label`/`pending`/`resolve`、自测 24 项 + 变异测试。
 
 还没做：`replay`、`eval`、D6/D7 的单独检测器；`doctor full` 的逐条覆盖率（现在是按小节抽样）。
 

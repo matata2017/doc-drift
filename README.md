@@ -21,7 +21,7 @@ AGENTS.md、CLAUDE.md 等 AI 配置文件排最前：每个会话都会读，过
 ## 四个动作
 
 - **init**：扫描文档与代码 → StartLux 给每篇文档分类（类型、是否代表现状）→ 从索引表提取业务域 → 生成文档↔代码映射 → 发现 Trellis 活跃任务、当前 SPEC，把它们的文档记进 `config.trellis` 和 `map.json` → 列出拿不准的文档交给 agent 问你。`--no-model` 只做本地部分。
-- **doctor**：体检，报告写到 `.doc-drift/reports/日期.md`。**默认只查当前 Trellis 任务**（当前 SPEC）里的文档；会话没挂任务时按当前改动反查属于哪个任务（`taskForChanges`：任务登记的文件边界 > 代码→文档图谱 > 任务文档里提到的代码文件名，已完成的也算、会标出来），反查不出、并列或对不上就不猜，直接要你用 `--task` 指定。`doctor full` 也不是扫全仓库：只查所有**活跃 Trellis 任务**（in_progress / review，限当前分支、限本 worktree）的 SPEC 文档 + AI 规则文件（AGENTS.md/CLAUDE.md）。拿文档现在的说法和代码现在的实现逐节比，**不依赖 git diff**——提交了、diff 没了、过了很久都能重算。
+- **doctor**：体检，报告写到 `.doc-drift/reports/日期.md`。**默认只查当前 Trellis 任务**（当前 SPEC）里的文档；会话没挂任务时按当前改动反查属于哪个任务（`taskForChanges`：任务登记的文件边界 > 代码→文档图谱 > 任务文档里提到的代码文件名，已完成的也算、会标出来），反查不出、并列或对不上就不猜，直接要你用 `--task` 指定。`doctor full` 也不是扫全仓库：只查所有**活跃 Trellis 任务**（in_progress / review，限当前分支、限本 worktree）的 SPEC 文档 + AI 规则文件（AGENTS.md/CLAUDE.md）。拿文档现在的说法和代码现在的实现逐节比，**不依赖 git diff**——提交了、diff 没了、过了很久都能重算。每条冲突都先问你以哪边为准（可能需求已经改了、文档没跟上）；报告结尾有「这次没查什么」，写明没映射到代码的文档、没判完的候选段、判了但把握不足的段。
 - **check**：用户确认后跑，只对刚才那一轮钩子报出的候选调**一次**模型，判过时就记待办并给对齐方向。不确认就不花钱。
 - **处理待办**：`doc-drift pending` 看日常钩子攒下的（改了代码但文档没改、新接口没文档），逐条改完 `doc-drift resolve`。
 
@@ -96,7 +96,7 @@ doc-drift tasks                                  列出 Trellis 任务和它们�
 doc-drift check                                  用户确认后：只核对上一轮改动涉及的文档小节
 doc-drift defer <文档> [--section] [--note]      用户说"先记下来"：只记一笔，不查、不打扰
 doc-drift deferred                               看记下来的待核对项
-doc-drift pending / resolve <P编号> <done|skip> / label <P编号> <right|wrong>
+doc-drift pending / resolve <P编号> <done|skip> / label <编号> <right|wrong> [--note 原因]
 doc-drift ignore <F编号...>                       这些体检项不用处理
 doc-drift mode <observe|remind>
 doc-drift status
@@ -115,7 +115,7 @@ doc-drift status
 ## 发给 StartLux 的内容
 
 - init：每篇文档的路径、标题、小标题、开头约 800 字。
-- doctor / check：被判断的文档小节（≤1200 字）与它映射到的代码（每文件 ≤4000 字、每次最多 3 个文件）。
+- doctor / check：被判断的文档整节（≤4000 字）与它映射到的代码（每文件 ≤4000 字、每次最多 3 个文件）。
 - 钩子本身不发请求；只有用户确认后的 `check` 和手动 `doctor` 才发。
 - 发出前脱敏：`sk-…`、≥32 位随机串、`password=…`/`token: …` 这类写法替换为 `<已脱敏>`。不能覆盖所有密钥格式，敏感项目请评估。
 

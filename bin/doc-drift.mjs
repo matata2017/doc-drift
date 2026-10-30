@@ -338,9 +338,9 @@ const cmds = {
   label() {
     const root = rootOrDie()
     const [, id, verdict] = pos
-    if (!['right', 'wrong'].includes(verdict)) return console.error('用法：doc-drift label <P编号> <right|wrong>')
-    P.log(root, { event: 'label', id, verdict })
-    console.log('已记录')
+    if (!['right', 'wrong'].includes(verdict)) return console.error('用法：doc-drift label <编号> <right|wrong> [--note 原因]')
+    const r = DR.labelFinding(root, id, verdict, flag('--note'))
+    console.log(r.cleared ? '已记录误报：清掉了这段的缓存，下次 doctor 会重新判；已写进 .doc-drift/answers.md' : '已记录')
   },
 
   mode() {

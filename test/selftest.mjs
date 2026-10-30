@@ -58,6 +58,7 @@ process.env.DOC_DRIFT_API_KEY = 'test'
 const P = await import('../lib/project.mjs')
 const I = await import('../lib/init.mjs')
 const DR = await import('../lib/doctor.mjs')
+const D = await import('../lib/decide.mjs')
 const H = await import('../lib/hook.mjs')
 const S = await import('../lib/scan.mjs')
 const A = await import('../lib/audit.mjs')
@@ -262,6 +263,28 @@ try {
     const again = await DR.runDoctor(root, { useModel: true, scope: 'all', full: true })
     assert.equal(again.stats.judged, 0); assert.equal(calls, before)
     assert.equal(again.findings.filter((x) => x.kind === 'stale').length, all.findings.filter((x) => x.kind === 'stale').length)   // 缓存的判断照样出报告
+  })
+
+  await t('判断时送整节文档，不只前 1200 字', () => {
+    const st = D.staleState([{ doc: 'x.md', section: 's', docText: 'a'.repeat(3000) + 'TAIL', files: ['a.java'], code: 'c' }])
+    assert.ok(st.includes('TAIL'))
+  })
+
+  await t('报告写明这次没查什么；标了误报清缓存并记进答复', async () => {
+    const r = await DR.runDoctor(root, { useModel: true, scope: 'all', full: true, maxStale: 100 })
+    const md = DR.renderReport(root, r)
+    assert.match(md, /## 这次没查什么/)
+    assert.match(md, /没有代码关联的文档|历史 \/ 已归档文档|已判断但判为准确或把握不足/)
+    assert.equal(typeof r.stats.unmapped, 'number')
+    assert.equal(r.stats.conflicts, r.findings.filter((f) => f.kind === 'stale').length)
+    DR.saveReport(root, md, r)
+    const f = r.findings.find((x) => x.kind === 'stale' && x.anchor?.kind === 'section')
+    assert.ok(f)
+    const key = `${f.doc}#${f.anchor.value}`
+    assert.ok(P.loadStaleCache(root)[key])
+    assert.equal(DR.labelFinding(root, f.id, 'wrong', '文档改过了，是误报').cleared, true)
+    assert.ok(!P.loadStaleCache(root)[key])
+    assert.match(P.readAnswers(root), /是误报/)
   })
 
   await t('doctor（当前 SPEC）：不看 diff，直接拿文档和现在的代码比', async () => {
