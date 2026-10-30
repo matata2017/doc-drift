@@ -287,6 +287,16 @@ try {
     assert.match(P.readAnswers(root), /是误报/)
   })
 
+  await t('报告按模式分开命名：task 用任务名，full 用 -full，同一天不互相覆盖', () => {
+    const taskFile = DR.saveReport(root, '# task', { findings: [], stats: { mode: 'task', taskId: '10-30-sop-feynman-log' } })
+    const fullFile = DR.saveReport(root, '# full', { findings: [], stats: { mode: 'full' } })
+    assert.match(taskFile, /-task-10-30-sop-feynman-log\.md$/)
+    assert.match(fullFile, /-full\.md$/)
+    assert.notEqual(taskFile, fullFile)
+    assert.equal(readFileSync(taskFile, 'utf8'), '# task')
+    assert.equal(readFileSync(fullFile, 'utf8'), '# full')
+  })
+
   await t('doctor（当前 SPEC）：不看 diff，直接拿文档和现在的代码比', async () => {
     // 关键：代码先提交，文档后提交（文档比代码新）→ 旧的"代码在文档之后改过"判据会漏，新判据照样能比出不一致
     w('src/main/java/demo/OrderService.java', JAVA('demo', 'OrderService', '  public int price(int n) { return n * 20; }   // spec-check'))

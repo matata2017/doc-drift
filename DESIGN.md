@@ -45,7 +45,7 @@ D5 不看"谁比谁新"：时间戳只能说明改过，说明不了内容还对
 | `config.json` | 是 | 文档根目录与类型、业务域、代码根目录、忽略规则、以谁为准、`trellis`（活跃任务 / 当前 SPEC / 它们的文档） |
 | `map.json` | 是（自动生成） | 文档段落（文件 + 标题）↔ 代码锚点（文件/类/接口/表），带锚点在文档里的行号；含 Trellis 任务文档 |
 | `answers.md` | 是 | 你回答过的问题与结论（"v1.6 已归档""XxxController 是内部接口，不需要文档"），之后先查这里再问 |
-| `reports/日期.md` | 可选 | doctor 报告 |
+| `reports/日期-task-<任务名>.md`、`reports/日期-full.md` | 可选 | doctor 报告（task 与 full 分开，不互相覆盖） |
 | `state/`（.gitignore） | 否 | 待办（pending）、每个会话的 diff 基线（sessions）、轮末候选（candidates）、deferred、判断日志、冷却 |
 
 ## 5. 动作

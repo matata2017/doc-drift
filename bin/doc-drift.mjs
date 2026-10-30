@@ -176,7 +176,7 @@ const cmds = {
     } catch (e) { return console.error(e.message) }
     if (has('--json')) { console.log(JSON.stringify(result.findings, null, 1)); return }
     const md = DR.renderReport(root, result)
-    const file = DR.saveReport(root, md, { findings: result.findings })
+    const file = DR.saveReport(root, md, { findings: result.findings, stats: result.stats })
     const main = result.findings.filter((f) => f.severity !== 'info')
     console.log(`\n体检完成：需要处理 ${main.length} 项（其中 AI 配置文件 ${main.filter((f) => f.aiConfig).length} 项），提示 ${result.findings.length - main.length} 项`)
     if (result.stats.staleLeft) console.log(`内容过时：已判断 ${result.stats.judgedTotal}/${result.stats.candidates} 段，还剩 ${result.stats.staleLeft} 段——处理完这批再跑一次 doctor 接着判`)
