@@ -9,7 +9,7 @@
 
 | 版本 | 用什么 | 适合 |
 |---|---|---|
-| 通用版（默认） | `grilling`（/grill-me）逼需求 + `tdd` + `code-review` + `feynman-analysis` + `ponytail` | 任意仓库；没有 BladeX、没有 Trellis 也能跑 |
+| 通用版（默认） | `grilling`（/grill-me）逼需求 + `tdd` + `code-review` + `feynman-analysis` + `ponytail` + `ub-mode` | 任意仓库；没有 BladeX、没有 Trellis 也能跑 |
 | BladeX 版 | 通用版的流程不变，技能换成 `blade-audit` / `blade-doc` / `blade-design` / `huashu-chrome` | 基于 BladeX 的 Java 后端项目 |
 
 流程本身与语言、框架无关；**换的只是每个角色手里那把工具**。
@@ -39,7 +39,7 @@
 | 3 | 派活 | Lead | 给每个角色一份自包含 brief：目标、允许改的路径、禁止碰的路径、验收怎么证明 |
 | 4 | 费曼反讲 | Developer / Tester | 各讲一遍：为什么做、输入→处理→输出、改哪些文件、每条验收怎么证明、不确定点 |
 | 5 | 确认开工 | Lead | 明确回「确认开工」；反讲有错就重讲，不辩论绕过。**确认前不写代码、不跑测试** |
-| 6 | 实现 | Developer | 只改 brief 里的范围；先想最小改法（`ponytail`）；非平凡逻辑留一个小测试 |
+| 6 | 实现 | Developer | 只改 brief 里的范围；先想最小改法（`ponytail`）；按 `ub-mode` 先跑通再改对；非平凡逻辑留一个小测试 |
 | 7 | 独立验收 | Tester | 用同一份验收标准复跑，给可复现证据；开发者自测不算数 |
 | 8 | 评审（可选） | Lead / `code-review` | 只看实际 diff + 证据；失败退回 Developer，Tester 按原标准复验 |
 | 9 | 收口 | Lead | 问用户要不要跑文档检查；把结论写进 `MILESTONES.md`；任务完成才归档 |
@@ -65,12 +65,14 @@
 | 角色 | 职责 | 通用版 | BladeX 版 |
 |---|---|---|---|
 | Lead | 收需求、拆任务、定边界、终审 | `grilling`、`code-review`、`feynman-analysis`（审反讲） | `blade-audit`、`blade-doc` |
-| Developer | 只实现已确认任务 | `tdd`、`ponytail`、`feynman-analysis` | `blade-doc`、`blade-design`（脚手架由 Lead 先批） |
+| Developer | 只实现已确认任务 | `tdd`、`ponytail`、`ub-mode`、`feynman-analysis` | `blade-doc`、`blade-design`（脚手架由 Lead 先批） |
 | Tester | 只测试、给证据 | `feynman-analysis`、浏览器类技能按需 | `blade-audit`、`huashu-chrome` |
 | Codegen（可选） | 标准 DDL/CRUD 骨架 | —（通用项目通常不需要） | `blade-design` |
 | 文档 | 文档↔代码一致性 | `doc-drift` | `doc-drift` |
 
 搜索：有代码图谱先查图谱（如 `codegraph explore "问题"`），没有再查项目索引 + 定向 grep/read，**禁止全库盲扫**。
+
+模式选择（不改变流程和门禁）：`ponytail` 管「少写代码」——能删就删、能复用就复用；`ub-mode` 管「实现节奏」——先跑通（First Make it Work）→ 再改对（Make it Right）→ 再按规范（Follow Practice），适合新功能和重构。两个可以同时开。
 
 ---
 
